@@ -1,0 +1,61 @@
+---
+
+- name: Install Docker
+  gather_facts: false
+  hosts: "{{ variable_host | default('all') }}"
+  tasks:
+
+    - name: Update repositories cache
+      apt:
+        update_cache: yes    
+        
+    - name: Remove "docker old packages"
+      apt:
+        name: "{{ packages }}"
+        state: absent
+      vars:
+        packages:
+        - docker
+        - docker-engine
+        - docker.io
+        - containerd
+        - runc
+    
+    - name: Add docker repo necesary files
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg-agent
+        - software-properties-common
+             
+    - name: Add docker repo key
+      shell: /usr/bin/curl -fsSL https://download.docker.com/linux/ubuntu/gpg | /usr/bin/apt-key add -
+    
+    - name: Add docker repo location
+      shell: /usr/bin/add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    
+    - name: Update repositories cache
+      apt:
+       update_cache: yes    
+  
+    - name: Install newest "docker" packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars: 
+        packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - python-pip #use docker remotely
+        
+    - pip:
+        name:
+            - docker
+            - docker-compose
+        

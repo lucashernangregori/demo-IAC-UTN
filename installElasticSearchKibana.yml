@@ -1,0 +1,49 @@
+- name: Install ElasticSearch and Kibana
+  gather_facts: false
+  hosts: "{{ variable_host | default('all') }}"
+  vars:
+        docker_volume: elastic_data
+        docker_network: elastic_net
+        elasticSearch_container_name: elasticsearch
+        kibana_container_name: kibana
+     
+  tasks:
+        - name: "Create a Volume"
+          docker_volume:
+            name: "{{ docker_volume }}"
+        
+        - name: "Create a network"
+          docker_network:
+            name: "{{ docker_network }}"
+        
+        - name: "Launch ElasticSearch container"
+          docker_container:
+            name: "{{ elasticSearch_container_name }}"
+            image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+            ports:
+              - 9200:9200
+              - 9300:9300
+            restart: true
+            networks:
+              - name: "{{ docker_network }}"
+                aliases:
+                  - "{{ elasticSearch_container_name }}"
+            env:
+              discovery.type: single-node
+        
+        - name: "Launch kibana container"
+          docker_container:
+            name: "{{ kibana_container_name }}"
+            image: docker.elastic.co/kibana/kibana:6.6.1
+            links:
+                - "elasticsearch:elasticsearch"
+            ports:
+              - 5601:5601
+            restart: true
+            networks:
+              - name: "{{ docker_network }}"
+                aliases:
+                  - "{{ kibana_container_name }}"
+            env:
+              ELASTICSEARCH_URL: http://elasticsearch:9200
+              

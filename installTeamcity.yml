@@ -1,0 +1,41 @@
+- name: Install TeamcityServer and Agent
+  gather_facts: false
+  hosts: "{{ variable_host | default('all') }}"
+  vars:
+        tc_network: elastic_net
+        tc_container_name: tcserver
+        agent_container_name: tcagent
+        
+  tasks:
+        - name: "Create a network"
+          tc_network:
+            name: "{{ tc_network }}"
+        
+        - name: "Launch Tc server container"
+          docker_container:
+            name: "{{ tc_container_name }}"
+            image: jetbrains/teamcity-server
+            ports:
+              - 8111:8111
+            restart: true
+            networks:
+              - name: "{{ tc_network }}"
+                aliases:
+                  - "{{ tc_container_name }}"
+            env:
+              discovery.type: single-node
+        
+        - name: "Launch Tc Agent container"
+          docker_container:
+            name: "{{ agent_container_name }}"
+            image: jetbrains/teamcity-agent
+            links:
+                - "tcserver:tcserver"
+            restart: true
+            networks:
+              - name: "{{ tc_network }}"
+                aliases:
+                  - "{{ agent_container_name }}"
+            env:
+              SERVER_URL: tcserver:8111
+        
