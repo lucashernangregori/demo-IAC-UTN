@@ -2,13 +2,13 @@
   gather_facts: false
   hosts: "{{ host | default('all') }}"
   vars:
-        tc_network: elastic_net
+        tc_network: tc_net
         tc_container_name: tcserver
         agent_container_name: tcagent
         
   tasks:
         - name: "Create a network"
-          tc_network:
+          docker_network:
             name: "{{ tc_network }}"
         
         - name: "Launch Tc server container"
