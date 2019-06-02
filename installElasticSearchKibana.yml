@@ -1,6 +1,6 @@
 - name: Install ElasticSearch and Kibana
   gather_facts: false
-  hosts: "{{ variable_host | default('all') }}"
+  hosts: "{{ host | default('all') }}"
   vars:
         docker_volume: elastic_data
         docker_network: elastic_net

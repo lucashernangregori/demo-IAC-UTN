@@ -2,7 +2,7 @@
 
 - name: Install Docker
   gather_facts: false
-  hosts: "{{ variable_host | default('all') }}"
+  hosts: "{{ host | default('all') }}"
   tasks:
 
     - name: Update repositories cache
@@ -52,6 +52,7 @@
         - docker-ce
         - docker-ce-cli
         - containerd.io
+        - python3-pip
         - python-pip #use docker remotely
         
     - pip:

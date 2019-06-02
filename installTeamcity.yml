@@ -1,6 +1,6 @@
 - name: Install TeamcityServer and Agent
   gather_facts: false
-  hosts: "{{ variable_host | default('all') }}"
+  hosts: "{{ host | default('all') }}"
   vars:
         tc_network: elastic_net
         tc_container_name: tcserver
