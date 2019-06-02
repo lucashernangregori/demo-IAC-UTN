@@ -1,0 +1,19 @@
+- name: InstaloMetricBeat Linux
+  hosts: "{{ variable_host }}"
+  gather_facts: false
+  tasks:
+  - name: instalo metricbeat service
+    shell: |
+        mkdir -p /temp
+        cd /temp
+        wget https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-6.6.2-amd64.deb
+        dpkg -i metricbeat-6.6.2-amd64.deb
+
+  - name: copio archivo de configuracion metricbeat.yml
+    copy:
+      src: metricbeat.yml
+      dest: /etc/metricbeat/metricbeat.yml
+
+  - name: corro servicio metricbeat
+    shell: |
+        service metricbeat start
