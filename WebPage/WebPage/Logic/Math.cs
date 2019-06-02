@@ -8,7 +8,7 @@ namespace WebPage.Logic
     public class Math
     {
         public int Sumar(int a, int b) {
-            return a - b;
+            return a + b;
         }
     }
 }
