@@ -1,0 +1,19 @@
+- name: InstaloFilebeat Linux
+  hosts: "{{ host | default('all') }}"
+  gather_facts: false
+  tasks:
+  - name: instalo filebeat service
+    shell: |
+        mkdir -p /temp
+        cd /temp
+        wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.6.2-amd64.deb
+        dpkg -i filebeat-6.6.2-amd64.deb
+
+  - name: copio archivo de configuracion filebeat.yml
+    copy:
+      src: filebeat.yml
+      dest: /etc/filebeat/filebeat.yml
+
+  - name: corro servicio filebeat
+    shell: |
+        service filebeat start
