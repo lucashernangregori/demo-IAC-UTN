@@ -17,6 +17,8 @@
             image: jetbrains/teamcity-server
             ports:
               - 8111:8111
+            volumes:
+              - "/root/.ssh:/data/teamcity_server/datadir/config/projects/DemoIacUtn/pluginData/ssh_keys:rw"
             restart: true
             networks:
               - name: "{{ tc_network }}"
