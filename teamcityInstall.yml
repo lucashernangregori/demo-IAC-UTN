@@ -11,6 +11,16 @@
            # src: tcBackup.zip
            # dest: /root/tcBackup.zip
         
+        - name: Install packages
+          apt:
+           name: unzip
+           state: present
+        
+        - name: Creates directory
+          file:
+            path: /root/tcBackup
+            state: directory
+        
         - name: Extract tcbackup
           unarchive:
             src: tcBackup.zip
