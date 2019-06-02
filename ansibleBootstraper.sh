@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 apt update
 apt install -y python python-pip
 pip install pywinrm
