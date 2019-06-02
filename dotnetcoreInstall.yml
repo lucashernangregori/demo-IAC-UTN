@@ -16,6 +16,9 @@
       shell: /usr/bin/dpkg -i packages-microsoft-prod.deb
     
     - name: Add repo location
+      shell: add-apt-repository universe
+    
+    - name: Add repo location
       apt_repository:
        repo: universe
        state: present
