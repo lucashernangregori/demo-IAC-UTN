@@ -18,7 +18,7 @@
     copy: 
       remote_src: True
       src: /etc/filebeat/modules.d/nginx.yml.disabled
-      dest:/etc/filebeat/modules.d/nginx.yml
+      dest: /etc/filebeat/modules.d/nginx.yml
 
   - name: corro servicio filebeat
     shell: |
