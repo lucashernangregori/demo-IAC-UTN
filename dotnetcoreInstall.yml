@@ -26,10 +26,14 @@
     - name: Update repositories cache
       apt:
        update_cache: yes    
-  
+    
     - name: Install packages
       apt:
         name: aspnetcore-runtime-2.2
+        state: present
+       
+    - name: Install packages
+      apt:
         name: nginx
         state: present
     
