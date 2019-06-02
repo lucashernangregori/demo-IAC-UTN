@@ -13,6 +13,12 @@
     copy:
       src: filebeat.yml
       dest: /etc/filebeat/filebeat.yml
+      
+  - name: Copy files from foo to bar
+    copy: 
+      remote_src: True
+      src: /etc/filebeat/modules.d/nginx.yml.disabled
+      dest:/etc/filebeat/modules.d/nginx.yml
 
   - name: corro servicio filebeat
     shell: |
