@@ -7,6 +7,19 @@
         agent_container_name: tcagent
         
   tasks:
+        # - copy:
+           # src: tcBackup.zip
+           # dest: /root/tcBackup.zip
+        
+        - name: Extract tcbackup
+          unarchive:
+            src: tcBackup.zip
+            dest: /root/tcBackup
+
+        - copy:
+           src: /root/.ssh/id_rsa
+           dest: /root/tcBackup/config/projects/DemoIacUtn/pluginData/ssh_keys/id_rsa
+            
         - name: "Create a network"
           docker_network:
             name: "{{ tc_network }}"
@@ -18,7 +31,8 @@
             ports:
               - 8111:8111
             volumes:
-              - "/root/.ssh:/data/teamcity_server/datadir/config/projects/DemoIacUtn/pluginData/ssh_keys:rw"
+              # - "/root/.ssh:/data/teamcity_server/datadir/config/projects/DemoIacUtn/pluginData/ssh_keys:rw"
+              - "/root/tcBackup/:/data/teamcity_server/datadir/:rw"
             restart: true
             networks:
               - name: "{{ tc_network }}"
