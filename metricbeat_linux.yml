@@ -1,5 +1,5 @@
 - name: InstaloMetricBeat Linux
-  hosts: "{{ variable_host }}"
+  hosts: "{{ host | default('all') }}"
   gather_facts: false
   tasks:
   - name: instalo metricbeat service
