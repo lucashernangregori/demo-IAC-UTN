@@ -1,0 +1,257 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Plantilla demo utn. Incurre en costos debido a las instancias ec2 que levanta'
+Parameters:
+  SubdomainName:
+    Description: subdominio para el webserver
+    Type: String
+    
+Resources:
+  
+  MiVPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+     CidrBlock: 10.0.0.0/16
+  
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: MiVPC
+  
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MiVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+     VpcId: !Ref MiVPC
+     CidrBlock: 10.0.0.0/24
+     MapPublicIpOnLaunch: false
+  
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MiVPC
+  
+  PublicRoute1:   # Rutas hacia el internet gateway
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  
+  PublicSubnetARouteTableAssociation:
+     Type: AWS::EC2::SubnetRouteTableAssociation
+     Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+      
+  SecurityGroupPrincipal:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      VpcId: !Ref MiVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+  
+  SecurityGroupServicios:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Elastic stack y Teamcity
+      VpcId: !Ref MiVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '9200'
+        ToPort: '9200'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '5601'
+        ToPort: '5601'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '8111'
+        ToPort: '8111'
+        CidrIp: 0.0.0.0/0
+  
+  SecurityGroupWebserver:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: http
+      VpcId: !Ref MiVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+  
+  EC2InstanciaPrincipal:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: m5a.large
+      Tags:
+       -
+        Key: "Name"
+        Value: "Principal"
+      KeyName: lucasdemoutn
+      ImageId: ami-0c55b159cbfafe1f0 #ubuntu 18
+      NetworkInterfaces:  
+       - DeviceIndex: 0
+         AssociatePublicIpAddress: true
+         DeleteOnTermination: true
+         PrivateIpAddress: 10.0.0.50
+         SubnetId: !Ref PublicSubnetA
+         GroupSet: 
+          - !Ref SecurityGroupPrincipal
+      UserData:
+       Fn::Base64: 
+        !Sub |
+         #!/bin/bash -xe
+         cat /home/ubuntu/.ssh/authorized_keys > /root/.ssh/authorized_keys
+         git clone https://github.com/lucashernangregori/demo-IAC-UTN.git /root/demo
+         chmod 700 /root/demo/*
+         apt update
+         apt install -y python python-pip
+         echo "
+         # remap prefix from 'C-b' to 'C-a'
+         unbind C-b
+         set-option -g prefix C-a
+         bind-key C-a send-prefix
+         " > /root/.tmux.conf
+
+  EC2InstanciaServicios:
+   Type: AWS::EC2::Instance
+   Properties:
+     InstanceType: m5a.large
+     Tags:
+       -
+        Key: "Name"
+        Value: "Servicios"
+     KeyName: lucasdemoutn
+     ImageId: ami-0c55b159cbfafe1f0 #ubuntu 18
+     BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          VolumeSize: 15
+     NetworkInterfaces:  
+      - DeviceIndex: 0
+        AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+        PrivateIpAddress: 10.0.0.60
+        SubnetId: !Ref PublicSubnetA
+        GroupSet: 
+         - !Ref SecurityGroupPrincipal
+         - !Ref SecurityGroupServicios
+     UserData:
+      Fn::Base64: 
+       !Sub |
+        #!/bin/bash -xe
+        cat /home/ubuntu/.ssh/authorized_keys > /root/.ssh/authorized_keys
+        apt update
+        apt install -y python python-pip
+        echo "
+        # remap prefix from 'C-b' to 'C-a'
+         unbind C-b
+         set-option -g prefix C-a
+         bind-key C-a send-prefix
+        " > /root/.tmux.conf
+          
+  EC2InstanciaWebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      #IamInstanceProfile: codeDeploy
+      InstanceType: t3.medium
+      Tags:
+       -
+        Key: "Name"
+        Value: "Webserver"
+      KeyName: lucasdemoutn
+      ImageId: ami-0c55b159cbfafe1f0 #ubuntu 18
+      NetworkInterfaces:  
+       - DeviceIndex: 0
+         AssociatePublicIpAddress: true
+         DeleteOnTermination: true
+         PrivateIpAddress: 10.0.0.70
+         SubnetId: !Ref PublicSubnetA
+         GroupSet: 
+          - !Ref SecurityGroupPrincipal
+          - !Ref SecurityGroupWebserver
+      UserData:
+       Fn::Base64: 
+        !Sub |
+         #!/bin/bash -xe
+         cat /home/ubuntu/.ssh/authorized_keys > /root/.ssh/authorized_keys
+         apt update
+         apt install -y python python-pip
+         echo "
+         # remap prefix from 'C-b' to 'C-a'
+         unbind C-b
+         set-option -g prefix C-a
+         bind-key C-a send-prefix
+         " > /root/.tmux.conf
+
+  MyDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: iol.com.ar.
+      Comment: Demo utn dns record.
+      #Name: kas.iol.com.ar.
+      Name:
+       !Join
+        - ''
+        - - !Ref SubdomainName
+          - '.iol.com.ar.'
+      Type: A
+      TTL: '300'
+      ResourceRecords:
+      - !GetAtt EC2InstanciaWebServer.PublicIp
+         
+         
+       #falta rol codedeploy y rol cliente codedeploy, omito eso por tener que crearlos con IAM  
+  # CodeDeployApplication:
+    # Type: AWS::CodeDeploy::Application
+    # Properties:
+     # ComputePlatform: Server
+  
+  # CodeDeployDeploymentGroup:
+    # Type: 'AWS::CodeDeploy::DeploymentGroup'
+    # Properties:
+     # ApplicationName: !Ref CodeDeployApplication
+     # DeploymentConfigName: CodeDeployDefault.Demo
+     # DeploymentStyle:
+      # DeploymentType: IN_PLACE
+      # DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+     # ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+     # Ec2TagFilters:
+      # -
+       # Key: Name
+       # Type: KEY_AND_VALUE
+       # Value: Webserver
+  
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value:
+      Ref: EC2InstanciaPrincipal
+  AZ:
+    Description: Availability Zone of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - EC2InstanciaPrincipal
+      - AvailabilityZone
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - EC2InstanciaPrincipal
+      - PublicDnsName
+  PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - EC2InstanciaPrincipal
+      - PublicIp
